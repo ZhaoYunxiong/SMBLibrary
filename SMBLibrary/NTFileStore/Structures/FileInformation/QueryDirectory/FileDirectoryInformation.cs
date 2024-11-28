@@ -34,7 +34,14 @@ namespace SMBLibrary
         public FileDirectoryInformation(byte[] buffer, int offset) : base(buffer, offset)
         {
             CreationTime = DateTime.FromFileTimeUtc(LittleEndianConverter.ToInt64(buffer, offset + 8));
-            LastAccessTime = DateTime.FromFileTimeUtc(LittleEndianConverter.ToInt64(buffer, offset + 16));
+
+            //In some NAS devices, some small files have access times of 00:00:00.
+            var nowFileTime = DateTime.Now.ToFileTimeUtc();
+            var lastAccessFileTime = LittleEndianConverter.ToInt64(buffer, offset + 16);
+            if (nowFileTime > lastAccessFileTime)
+            {
+                LastAccessTime = DateTime.FromFileTimeUtc(lastAccessFileTime);
+            }
             LastWriteTime = DateTime.FromFileTimeUtc(LittleEndianConverter.ToInt64(buffer, offset + 24));
             ChangeTime = DateTime.FromFileTimeUtc(LittleEndianConverter.ToInt64(buffer, offset + 32));
             EndOfFile = LittleEndianConverter.ToInt64(buffer, offset + 40);
